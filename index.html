@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <title></title>
+    <meta name="description" content="nodejs gun js database">
+    <!--<link id="favicon" rel="icon" href="" type="image/x-icon">-->
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <!-- import the webpage's stylesheet -->
+    <link rel="stylesheet" href="/style.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.4.1/jquery.js"></script>
+    <script src="https://redom.js.org/redom.min.js"></script>
+
+    <script src="https://cdn.jsdelivr.net/npm/gun/gun.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/gun/sea.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/gun/lib/mix.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/gun/lib/then.js"></script>
+    <!-- RAD/LEX -->
+    <script src="https://cdn.jsdelivr.net/npm/gun/lib/radix.js"></script>
+	  <script src="https://cdn.jsdelivr.net/npm/gun/lib/radisk.js"></script>
+	  <script src="https://cdn.jsdelivr.net/npm/gun/lib/store.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/gun/lib/rindexed.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/gun/lib/path.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/gun/lib/list.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/gun/lib/promise.js"></script>
+  </head>
+  <body>
+      <!--
+        <div id="profile">
+            Public Key: <input id="aliaspublickey" readonly size="98"><button id="copypublickey">Copy</button>
+
+            <br>Profile:<label id="username"></label>
+            <br>
+            <br>Access Public Key: <input id="accesskey" placeholder="public key" size="90"/> <label id="lookalias">None</label>
+            <br>Alias: <input id="inputalias" placeholder="value"/> 
+            <button id="getalias"> Get Value </button>
+            <button id="grantkey"> Grant (share key) </button> 
+            <button id="revokekey"> Revoke (share key) </button>
+            
+            <br>
+            <br>Main Share data:
+            <input id="mainsharedatainput">
+            <button id="mainsharedatawrite"> Share Write </button>
+            <button id="mainsharedataread"> Share Read </button>
+            <button id="btnmainsharedatrust"> Trust Key </button>
+            <button id="btnmainsharedadistrust"> Distrust Key </button>
+            <button id="btnmainsharedatagenkey"> Gen Key </button>
+            <button id="btnmainsharedatalatestkey"> Latest Key </button>
+            <br> Delay Query get graph nodes.
+
+            <br>
+            <br> Search Public Key:
+            <br> <input id="inputsearchpublickey" size="98" placeholder="public key"/><button id="searchpublickeypaste">Paste</button><label id="searchalias"> Alias: ?</label>
+            <br> Alias: <input id="dataalias" placeholder="value"/>
+            <br>
+            <br> Public Share Data: <input id="sharewrite" placeholder="value"/> 
+            <button id="btnsubsharedatawrite"> Write Data </button>
+            <button id="btnsubsharedataread"> Read Data </button>
+            <button id="btnsubsharedatagenkey"> Gen Key </button>
+            <button id="btnsubsharedalatestkey"> Latest Key </button>
+        </div>
+
+        <div id="messages" style="height:100%;width:100%;">
+          <div id="messagesdiv" style="height:22px;width:100%;">
+            <select id="usercontacts">
+              <option selected disabled>-- Select User --</option>
+            </select>
+            <label>Public Key:</label><input id="mpublickey" value="" placeholder="public key"/>
+            <button id="btnadduser">+</button>
+            <button id="btnremoveuser">-</button>
+            <label id="mwho">who?</label>
+          </div>
+          <div id="messagelist" style="background-color: darkgray;">
+            
+          </div>
+          <div id="messageinputarea"style="height:22px;width:100%">
+            <input id="inputmessagechat" value="" placeholder="type here and press enter">
+          </div>
+        </div>
+        -->
+        <script type="module" src="/client.js" defer></script>
+    <footer>
+    </footer>
+  </body>
+</html>
