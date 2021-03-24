@@ -7,7 +7,8 @@
 // https://gun.eco/docs/SEA#quickstart
 //import { el, mount } from "redom";
 //import { el, mount, unmount } from "https://redom.js.org/redom.es.min.js";
-const { el, mount, unmount } = redom;
+const { el, mount, unmount} = redom;
+console.log(redom);
 let gunurl = window.location.origin+'/gun';
 //console.log(gunurl);
 var gun = Gun(gunurl);
@@ -59,12 +60,12 @@ function chatTimeStamp(isRecord){
 //===============================================
 // DIV NAV MENU ONCE LOGIN
 const divNavMenu = el("div",{id:'divNavMenu'},[
-  el('button',{onclick:btnProfile,textContent:'Profile'}),
-  el('button',{onclick:btnChangePassphrase,textContent:'Change Passphrase'}),
-  el('button',{onclick:btnPassphraseHint,textContent:'Passphrase Hint'}),
-  el('button',{onclick:btnMessage,textContent:'Message'}),
-  el('button',{onclick:btnChatLogs,textContent:'Chat'}),
-  el('span',{onclick:btnChatLogs,textContent:' - | - '}),
+  el('button',{onclick:btnNavMenuProfile,textContent:'Profile'}),
+  el('button',{onclick:btnNavMenuChangePassphrase,textContent:'Change Passphrase'}),
+  el('button',{onclick:btnNavMenuPassphraseHint,textContent:'Passphrase Hint'}),
+  el('button',{onclick:btnNavMenuPrivateMessage,textContent:'Private Message'}),
+  el('button',{onclick:btnNavMenuChatRoom,textContent:'Chat Room'}),
+  el('span',{textContent:' - | - '}),
   el('button',{onclick:btnLogout,textContent:'Logout'}),
 ]);
 // https://gun.eco/docs/User#user-leave
@@ -92,8 +93,8 @@ function btnLogout(){
 
     unmount(divAccessPanel, divChangePassphrase);
     unmount(divAccessPanel, divPassphraseHint);
-    unmount(divAccessPanel, divMessages);
-    unmount(divAccessPanel, divChatLogs);
+    unmount(divAccessPanel, divPrivateMessages);
+    unmount(divAccessPanel, divChatRoom);
   }
 }
 // USER DELETE // REMOVE ACCOUNT TO DELETE
@@ -258,7 +259,9 @@ class AliasProfile{
     $('#pskills').val('');
   }
 }
+// PROFILE PAGE
 const divProfile = new AliasProfile()
+
 function typingProfileAlias(event){
   let user = gun.user();
   //user.get('profile').put();
@@ -336,18 +339,54 @@ async function btnSTextPaste(){
     console.error('Failed to read clipboard contents: ', err);
   }
 }
-// MESSAGE
-const divMessages = el("div",{id:'divMessages'},[
-  el('label','message logs')
-]);
+// MESSAGE CONTENT
+class PrivateMessage{
+  constructor() {
+    this.el = el("div",{id:'divPrivateMessage'},[
+      el('label','Private Messages'),
+      el('div',{ id:'privatemessages',
+        style:{
+          height:'200px',
+          width:'500px',
+          'border-style':'solid',
+          'overflow-y': 'scroll'
+        }
+      }),
+      , el('input',{onkeyup:typingPrivateMessage,id:'privatemessageinput'})
+      , el('button',{onclick:btnPrivateMessage,textContent:'Enter'})
+    ]);
+  }
+  onmount(){
+  }
+  onunmount() {
+  }
+}
+const divPrivateMessages = new PrivateMessage();
+// BUTTON PRIVATE MESSAGE
+function btnPrivateMessage(){
+  console.log('privatemessageinput');
+  processPrivateMessage()
+}
+// TYPING PRIVATE MESSAGE
+function typingPrivateMessage(event){
+  if(event.keyCode == 13){
+    processPrivateMessage();
+  }
+}
+//PROCESS PRIVATE MESSAGE
+function processPrivateMessage(){
+  let msg = $('#privatemessageinput').val();
+  console.log(msg);
+}
 // https://gun.eco/docs/API
 //ev.off() //remove listener
 // CHAT ROOM MESSAGES
 var chat = gun.get('chat');
 //var ev0 =null;
+// CHAT ROOM CONTENT
 class ChatRoom{
   constructor() {
-    this.el =el("div",{id:'divChatLogs'},[
+    this.el =el("div",{id:'divChatRoom'},[
       el('label','chat logs'),
       el('div',{ id:'chatmessages',
         style:{
@@ -380,7 +419,7 @@ class ChatRoom{
     initChat();
   }
 }
-const divChatLogs = new ChatRoom();
+const divChatRoom = new ChatRoom();
 function chatTypingInput(event){
   console.log('typing...')
   if(event.keyCode == 13){
@@ -395,8 +434,7 @@ function btnChatMessage(){
 function processChatInput(msg){
   let clocktime = chatTimeStamp();
   let user = gun.user();
-  console.log(user.is.alias);
-  
+  //console.log(user.is.alias);
   gun.get('chat')
     .get(clocktime)
     .put({
@@ -600,26 +638,26 @@ function hidediv(){
   unmount(divAccessPanel, divProfile);
   unmount(divAccessPanel, divChangePassphrase);
   unmount(divAccessPanel, divPassphraseHint);
-  unmount(divAccessPanel, divMessages);
-  unmount(divAccessPanel, divChatLogs);
+  unmount(divAccessPanel, divPrivateMessages);
+  unmount(divAccessPanel, divChatRoom);
 }
-function btnProfile(){
+function btnNavMenuProfile(){
   hidediv();
   mount(divAccessPanel, divProfile);
 }
-function btnChangePassphrase(){
+function btnNavMenuChangePassphrase(){
   hidediv();
   mount(divAccessPanel, divChangePassphrase);
 }
-function btnPassphraseHint(){
+function btnNavMenuPassphraseHint(){
   hidediv();
   mount(divAccessPanel, divPassphraseHint);
 }
-function btnMessage(){
+function btnNavMenuPrivateMessage(){
   hidediv();
-  mount(divAccessPanel, divMessages);
+  mount(divAccessPanel, divPrivateMessages);
 }
-function btnChatLogs(){
+function btnNavMenuChatRoom(){
   hidediv();
-  mount(divAccessPanel, divChatLogs);
+  mount(divAccessPanel, divChatRoom);
 }
