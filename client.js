@@ -4,7 +4,6 @@
   Created by: Lightnet
 
 */
-
 // https://gun.eco/docs/SEA#quickstart
 //import { el, mount } from "redom";
 //import { el, mount, unmount } from "https://redom.js.org/redom.es.min.js";
@@ -13,35 +12,29 @@ let gunurl = window.location.origin+'/gun';
 //console.log(gunurl);
 var gun = Gun(gunurl);
 gun.on('hi', peer => {//peer connect
-  console.log('connect peer to',peer);
+  //console.log('connect peer to',peer);
   //console.log('peer connect!');
 });
 gun.on('bye', (peer)=>{// peer disconnect
-  console.log('disconnected from', peer);
+  //console.log('disconnected from', peer);
   //console.log('disconnected from peer!');
 });
 //===============================================
 // COPY PUBLIC KEY
-function publicKeyCopy(){
+async function publicKeyCopy(){
   // Select the text
-  document.getElementById('aliaspublickey').select();
-  var copied;
   try{
     // Copy the text
-    copied = document.execCommand('copy');
+    let pubKey = document.getElementById('aliaspublickey').value;
+    await navigator.clipboard.writeText(pubKey);
+    console.log('Public Key copied to clipboard');
   }catch (ex){
-    copied = false;  
-  }
-  if(copied){
-    console.log("COPY PUBLIC KEY!");
+    console.error('Failed to copy: ', err);
   }
 }
-
-function timeStamp(){
-  return new Date().getTime();
-}
-
-function timeStampD(){
+function chatTimeStamp(isRecord){
+  if(isRecord==null){isRecord=true;}
+  //console.log(isRecord);
   let time =new Date();
   let month = time.getMonth() + 1;
   let day = time.getDate();
@@ -55,37 +48,70 @@ function timeStampD(){
   sec = (sec < 10 ? "0" : "") + sec;
   //let ms = time.getUTCMilliseconds();
   let ms = time.getMilliseconds();
-  var str = time.getFullYear() + "/" + month + "/" + day + ":" +  hour + ":" + min + ":" + sec + "." + ms;
+  let str;
+  if(isRecord==false){
+    str = time.getFullYear() + "/" + month + "/" + day + ":";
+  }else{
+    str = time.getFullYear() + "/" + month + "/" + day + ":" +  hour + ":" + min + ":" + sec + "." + ms;
+  }
   return str;
 }
-
-function timeStampD2(){
-  let time =new Date();
-  let month = time.getMonth() + 1;
-  let day = time.getDate();
-  let hour = time.getHours();
-  let min = time.getMinutes();
-  let sec = time.getSeconds();
-  month = (month < 10 ? "0" : "") + month;
-  day = (day < 10 ? "0" : "") + day;
-  hour = (hour < 10 ? "0" : "") + hour;
-  min = (min < 10 ? "0" : "") + min;
-  sec = (sec < 10 ? "0" : "") + sec;
-  //let ms = time.getUTCMilliseconds();
-  let ms = time.getMilliseconds();
-  var str = time.getFullYear() + "/" + month + "/" + day;
-  return str;
-}
-
 //===============================================
-// DIV NAV MENU
+// DIV NAV MENU ONCE LOGIN
 const divNavMenu = el("div",{id:'divNavMenu'},[
   el('button',{onclick:btnProfile,textContent:'Profile'}),
   el('button',{onclick:btnChangePassphrase,textContent:'Change Passphrase'}),
   el('button',{onclick:btnPassphraseHint,textContent:'Passphrase Hint'}),
   el('button',{onclick:btnMessage,textContent:'Message'}),
-  el('button',{onclick:btnChatLogs,textContent:'Chat'})
+  el('button',{onclick:btnChatLogs,textContent:'Chat'}),
+  el('span',{onclick:btnChatLogs,textContent:' - | - '}),
+  el('button',{onclick:btnLogout,textContent:'Logout'}),
 ]);
+// https://gun.eco/docs/User#user-leave
+// LOGOUT
+function btnLogout(){
+  console.log('Logout');
+  console.log('No Function yet!');
+  let user = gun.user();
+  //console.log(user.is);
+  //console.log(user);
+  //user.leave({},(ack)=>{
+    //console.log(user.is);
+    //console.log(ack);
+  //});
+  user.leave({});
+  console.log(user.is);
+  if(!user.is){
+    console.log('Null Alias Logout pass!');
+    mount(divAccessPanel, divNavMenuAccess);
+    mount(divAccessPanel, divAccessContent);
+
+    unmount(divAccessPanel, divAlias);
+    unmount(divAccessPanel, divPublicKey);
+    unmount(divAccessPanel, divNavMenu);
+
+    unmount(divAccessPanel, divChangePassphrase);
+    unmount(divAccessPanel, divPassphraseHint);
+    unmount(divAccessPanel, divMessages);
+    unmount(divAccessPanel, divChatLogs);
+  }
+}
+// USER DELETE // REMOVE ACCOUNT TO DELETE
+function aliasDelete(){
+  let user = gun.user();
+  console.log('No Function yet!');
+  /*
+  user.delete('alias','passprhase',(ack)=>{
+    console.log(ack);
+    if(ack.err){
+      return console.log('FAIL');
+    }
+    if(ack.ok){
+      return console.log('PASS');
+    }
+  });
+  */
+}
 // DIV LOGIN
 const divLogin = el("div",{id:'divLogin'},[
 el('label','Alias: ')
@@ -158,26 +184,167 @@ const divPublicKey=el('label',{textContent:'Public Key:'},[
   el('button',{ onclick:publicKeyCopy,id:'copypublickey',textContent:'Copy'})
 ]);
 // PROFILE
-const divProfile = el("div",{id:'divProfile'},[
-  
-]);
+class AliasProfile{
+  constructor() {
+    this.el = el("div",{id:'divProfile'},[
+      el('label','Alias:'),
+      el('input',{id:'palias',onkeyup:typingProfileAlias,placeholder:'Alias'}),
+      //el('button',{textContent:'Get',onclick:getProfileAlias}),
+      el('br'),
+      el('label','Born:'),
+      el('input',{id:'pborn',onkeyup:typingProfileBorn,placeholder:'Born'}),
+      el('br'),
+      el('label','Education:'),
+      el('input',{id:'peducation',onkeyup:typingProfileEducation,placeholder:'Education'}),
+      el('br'),
+      el('label','Skills:'),
+      el('input',{id:'pskills',onkeyup:typingProfileSkills,placeholder:'Skills'}),
+      el('br'),
+      el('br'),
+      el('label','Pub:'),
+      el('input',{id:'ppublickeysearch',placeholder:'public key alias search!'
+      //,onkeypress:typingProfilePublicKeySearch
+      ,onkeyup:typingProfilePublicKeySearch
+      }),
+      el('button',{onclick:btnSTextPaste,textContent:'Paste Key'}),
+      el('label','Status:'),
+      el('label',{id:'sstatuspubickey',textContent:'None'}),
+      el('br'),
+      el('label','Alias:'),
+      el('input',{id:'salias',placeholder:'Alias'}),
+      el('br'),
+      el('label','Born:'),
+      el('input',{id:'sborn',placeholder:'Born'}),
+      el('br'),
+      el('label','Education:'),
+      el('input',{id:'seducation',placeholder:'Education'}),
+      el('br'),
+      el('label','Skills:'),
+      el('input',{id:'sskills',placeholder:'Skills'}),
+    ]);
+  }
+
+  onmount() {
+    console.log("mounted AliasProfile");
+    let user = gun.user();
+    user.get('profile').get('alias').once((ack)=>{
+      console.log(ack);
+      $('#palias').val(ack);
+      //palias
+    })
+    user.get('profile').get('born').once((ack)=>{
+      console.log(ack);
+      $('#pborn').val(ack);
+      //palias
+    })
+    user.get('profile').get('education').once((ack)=>{
+      console.log(ack);
+      $('#peducation').val(ack);
+      //palias
+    })
+    user.get('profile').get('skills').once((ack)=>{
+      console.log(ack);
+      $('#pskills').val(ack);
+      //palias
+    })
+  }
+
+  onunmount() {
+    console.log("unmounted ChatRoom");
+    //need to clear name
+    $('#palias').val('');
+    $('#pborn').val('');
+    $('#peducation').val('');
+    $('#pskills').val('');
+  }
+}
+const divProfile = new AliasProfile()
+function typingProfileAlias(event){
+  let user = gun.user();
+  //user.get('profile').put();
+  console.log($('#palias').val())
+  user.get('profile').get('alias').put($('#palias').val());
+}
+function getProfileAlias(){
+  let user = gun.user();
+  user.get('profile').get('alias').once((ack)=>{
+    console.log(ack);
+  })
+}
+function typingProfileBorn(event){
+  let user = gun.user();
+  user.get('profile').get('born').put($('#pborn').val())
+}
+function typingProfileEducation(event){
+  let user = gun.user();
+  user.get('profile').get('education').put($('#peducation').val())
+}
+function typingProfileSkills(event){
+  let user = gun.user();
+  user.get('profile').get('skills').put($('#pskills').val())
+}
+// SEARCH PUBLIC KEY
+var oldpublickey='';
+async function typingProfilePublicKeySearch(){
+  console.log('search pub...');
+  let publickey = $('#ppublickeysearch').val();
+  console.log(publickey);
+  if(oldpublickey != publickey){
+    oldpublickey=publickey;
+    let user = gun.user(publickey);
+    //console.log(user);
+    let name = await user.get('alias').then();
+    console.log(name);
+    if(name){
+      $('#sstatuspubickey').text('Found!');
+      console.log("FOUND!");
+      let pub = await user.get('pub').then();
+      //console.log(pub);
+      let salias = await user.get('profile').get('alias').then();
+      $('#salias').val(salias);
+      let sborn = await user.get('profile').get('born').then();
+      $('#sborn').val(sborn);
+      let seducation = await user.get('profile').get('education').then();
+      $('#seducation').val(seducation);
+      let sskills = await user.get('profile').get('skills').then();
+      $('#sskills').val(sskills);
+    }else{
+      $('#sstatuspubickey').text('Null');
+      $('#salias').val('');
+      $('#sborn').val('');
+      $('#seducation').val('');
+      $('#sskills').val('');
+    }
+    console.log("NOT SAME???");
+  }else{
+    console.log("SAME???");
+  }
+}
+// PASTE SEARCH PUB KEY
+async function btnSTextPaste(){
+  console.log(navigator.clipboard);
+  if (!navigator.clipboard) {
+    console.log('NULL clipboard!');
+    return;
+  }
+  try {
+    const text = await navigator.clipboard.readText();
+    $('#ppublickeysearch').val(text);
+    typingProfilePublicKeySearch();
+    console.log('Pasted content: ', text);
+  } catch (err) {
+    console.error('Failed to read clipboard contents: ', err);
+  }
+}
 // MESSAGE
 const divMessages = el("div",{id:'divMessages'},[
   el('label','message logs')
 ]);
 // https://gun.eco/docs/API
-//var ev = null
-//var listenerHandler = (value, key, _msg, _ev) => {
-  //ev = _ev
-  //...
-//}
-//node.on(listenerHandler)
-//node.get('someValue').put(6) //trigger listener to set ev
 //ev.off() //remove listener
-
-
 // CHAT ROOM MESSAGES
 var chat = gun.get('chat');
+//var ev0 =null;
 class ChatRoom{
   constructor() {
     this.el =el("div",{id:'divChatLogs'},[
@@ -191,21 +358,29 @@ class ChatRoom{
         }
       })
       , el('input',{onkeyup:chatTypingInput,id:'chatinput'})
-      , el('button',{onkeyup:BtnchatMessage,textContent:'Enter'})
+      , el('button',{onclick:btnChatMessage,textContent:'Enter'})
     ]);
   }
+
   onmount() {
     console.log("mounted ChatRoom");
+    initChat();
   }
 
   onunmount() {
     console.log("unmounted ChatRoom");
     //turn off chat
-    chat.off();
+    //ev0.off() // nope
+    chat.off(); // node.on(listenerhandler)
+  }
+
+  onremount() {
+    console.log("ONREMOUNT ChatRoom !!!!!!!!");
+    $('#chatmessages').empty();
+    initChat();
   }
 }
 const divChatLogs = new ChatRoom();
-
 function chatTypingInput(event){
   console.log('typing...')
   if(event.keyCode == 13){
@@ -213,12 +388,12 @@ function chatTypingInput(event){
     processChatInput($('#chatinput').val())
   }
 }
-function BtnchatMessage(){
+function btnChatMessage(){
   console.log('click...')
-  processChatInput($('#chatinput').val())
+  processChatInput($('#chatinput').val());
 }
 function processChatInput(msg){
-  let clocktime = timeStampD();
+  let clocktime = chatTimeStamp();
   let user = gun.user();
   console.log(user.is.alias);
   
@@ -230,19 +405,21 @@ function processChatInput(msg){
       date:clocktime
     });
 }
-
-function checkChatVisible(){
-
+function chatMessageHandler(data,key, _msg, _ev){
+  if(data !=null){
+    ProcessChatMessage(data);
+  }
 }
-
 function initChat(){
-  let clocktime = timeStampD2();
+  let clocktime = chatTimeStamp(false);
+  console.log(clocktime);
+  //needs to be reinit to call off event
+  chat = gun.get('chat');
   chat
-    .get({'.':{'<':clocktime}, '%': 50000}).map()
-    .once((data,key)=>{
-      console.log(data);
-      ProcessChatMessage(data);
-    });
+    // {'>': 'start', '<': 'end'}
+    //.get({'.':{'<':clocktime}, '%': 50000}).map()
+    .get({'.':{'>':clocktime}, '%': 50000}).map()
+    .once(chatMessageHandler);
 }
 // https://stackoverflow.com/questions/10503606/scroll-to-bottom-of-div-on-page-load-jquery/10503695
 function ProcessChatMessage(data){
@@ -250,10 +427,7 @@ function ProcessChatMessage(data){
   let msg = el('div',{id:data.date,textContent:`[${data.alias} ]: ${data.msg}`});
   $('#chatmessages').append(msg);
   $('#chatmessages').scrollTop($('#chatmessages')[0].scrollHeight);
-
-
 }
-
 // NAV MENU ACCESS BASIC
 const divNavMenuAccess=el('div',[
   , el('button',{onclick:showLogin,textContent:'Login'})
@@ -299,7 +473,6 @@ function btnlogin(){
       unmount(divAccessPanel, divNavMenuAccess);
       unmount(divAccessPanel, divAccessContent);
       mount(divAccessPanel, divAlias);
-      mount(divAccessPanel, el('span',' '));
       mount(divAccessPanel, divPublicKey);
       mount(divAccessPanel, divNavMenu);
       mount(divAccessPanel, divProfile);
@@ -402,7 +575,7 @@ async function btnGetPassphraseHint(){
   }
 }
 //===============================================
-// DIALOG MODEL
+// DIALOG BOX MODEL
 const divModel = el("div",{id:'divModel',class:'modal'},[
   el('div',{id:'dialog',class:'modal-content'},[
     el('p',{textContent:'Message: '},el('label',{id:'dialogmessage',textContent:'None'})),
@@ -422,7 +595,7 @@ function btnDialogOkay(){
   $("#divModel").hide();
 };
 //===============================================
-// BUTTON NAV MENU
+// BUTTON NAV MENU ONCE LOGIN
 function hidediv(){
   unmount(divAccessPanel, divProfile);
   unmount(divAccessPanel, divChangePassphrase);
@@ -448,6 +621,5 @@ function btnMessage(){
 }
 function btnChatLogs(){
   hidediv();
-  initChat();
   mount(divAccessPanel, divChatLogs);
 }
