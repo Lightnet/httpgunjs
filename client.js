@@ -8,8 +8,23 @@
 //import { el, mount } from "redom";
 //import { el, mount, unmount } from "https://redom.js.org/redom.es.min.js";
 const { el, mount, unmount} = redom;
-console.log(redom);
 let gunurl = window.location.origin+'/gun';
+;(async ()=>{
+  /*
+  if (!navigator.clipboard) {
+    console.log('NULL clipboard!');
+    return;
+  }
+  try {
+    //await navigator.clipboard.writeText('');
+    //console.log('Clear copied to clipboard: ');
+    const text = await navigator.clipboard.readText();
+    console.log(text);
+  } catch (err) {
+    console.error('paste purge: ', err);
+  }
+  */
+})();
 //console.log(gunurl);
 var gun = Gun(gunurl);
 gun.on('hi', peer => {//peer connect
@@ -23,6 +38,10 @@ gun.on('bye', (peer)=>{// peer disconnect
 //===============================================
 // COPY PUBLIC KEY
 async function publicKeyCopy(){
+  if (!navigator.clipboard) {
+    console.log('NULL clipboard!');
+    return;
+  }
   // Select the text
   try{
     // Copy the text
@@ -86,11 +105,9 @@ function btnLogout(){
     console.log('Null Alias Logout pass!');
     mount(divAccessPanel, divNavMenuAccess);
     mount(divAccessPanel, divAccessContent);
-
     unmount(divAccessPanel, divAlias);
     unmount(divAccessPanel, divPublicKey);
     unmount(divAccessPanel, divNavMenu);
-
     unmount(divAccessPanel, divChangePassphrase);
     unmount(divAccessPanel, divPassphraseHint);
     unmount(divAccessPanel, divPrivateMessages);
@@ -226,32 +243,32 @@ class AliasProfile{
   }
 
   onmount() {
-    console.log("mounted AliasProfile");
+    //console.log("mounted AliasProfile");
     let user = gun.user();
     user.get('profile').get('alias').once((ack)=>{
-      console.log(ack);
+      //console.log(ack);
       $('#palias').val(ack);
       //palias
     })
     user.get('profile').get('born').once((ack)=>{
-      console.log(ack);
+      //console.log(ack);
       $('#pborn').val(ack);
       //palias
     })
     user.get('profile').get('education').once((ack)=>{
-      console.log(ack);
+      //console.log(ack);
       $('#peducation').val(ack);
       //palias
     })
     user.get('profile').get('skills').once((ack)=>{
-      console.log(ack);
+      //console.log(ack);
       $('#pskills').val(ack);
       //palias
     })
   }
 
   onunmount() {
-    console.log("unmounted ChatRoom");
+    //console.log("unmounted AliasProfile");
     //need to clear name
     $('#palias').val('');
     $('#pborn').val('');
@@ -342,8 +359,19 @@ async function btnSTextPaste(){
 // MESSAGE CONTENT
 class PrivateMessage{
   constructor() {
+    this.contact;
     this.el = el("div",{id:'divPrivateMessage'},[
       el('label','Private Messages'),
+      el('label',' - | - '),
+      el('label','Pub Key:'),
+      el('select',{id:'pmcontacts',onchange:selectContactPM},[el('option',{default:true,textContent:'Select Public Keys'})]),
+      el('input',{id:'pmpublickey',onkeyup:typingPMPubKeySearch,placeholder:'Alias Public Key'}),
+      el('button',{onclick:copyPMPubKeySearch,textContent:'copy'}),
+      el('button',{onclick:pastePMPubKeySearch,textContent:'paste'}),
+      el('button',{onclick:addContactPMPubKeySearch,textContent:'+'}),
+      el('button',{onclick:removeContactPMPubKeySearch,textContent:'-'}),
+      el('label','Status: '),
+      el('label',{id:'pmPubKeystatus',textContent:'None'}),
       el('div',{ id:'privatemessages',
         style:{
           height:'200px',
@@ -356,11 +384,57 @@ class PrivateMessage{
       , el('button',{onclick:btnPrivateMessage,textContent:'Enter'})
     ]);
   }
-  onmount(){
+  addContact(data){
+    //console.log(data);
+    let option = el('option',{id:data.id, value:data.pub},`${data.alias}`);
+    $('#pmcontacts').append(option);
   }
-  onunmount() {
+  updateContact(){
+    $('#pmcontacts').empty();
+    $('#pmcontacts').append(el('option',{default:true,textContent:'Select Public Keys'}));
+    let user = gun.user();
+    //let contacts = [];
+    let self = this;
+    this.contact = user.get('contact').once().map().once(async(data,id)=>{
+      //console.log(data);
+      //console.log(id);
+      if(data == null){
+        return;
+      }
+      if(data){
+        if(data == 'null'){
+          return;
+        }
+        let name = await user.get('contact').get(id).get('alias').then();
+        if(name){
+          //console.log(name);
+          //console.log("ADD CONTACT?");
+          self.addContact({id:id,alias:name,pub:id});
+        }
+      }
+    });
+    this.contact.off();
+  }
+  onmount(){
+    this.updateContact();
+  }
+  onunmount(){
+    $('#pmpublickey').val('');
+    try {
+      this.contact.off();  
+    } catch (error) {
+      console.log(error);
+    }
   }
 }
+
+function selectContactPM(){
+  console.log('test select');
+  console.log($('#pmcontacts').val());
+  $('#pmpublickey').val($('#pmcontacts').val());
+  typingPMPubKeySearch();
+}
+
 const divPrivateMessages = new PrivateMessage();
 // BUTTON PRIVATE MESSAGE
 function btnPrivateMessage(){
@@ -378,16 +452,96 @@ function processPrivateMessage(){
   let msg = $('#privatemessageinput').val();
   console.log(msg);
 }
+// COPY PRIVATE MESSAGE PUB KEY
+async function copyPMPubKeySearch(){
+  if (!navigator.clipboard) {
+    console.log('NULL clipboard!');
+    return;
+  }
+  try {
+    await navigator.clipboard.writeText($('#pmpublickey').val());
+    console.log('Public Key copied to clipboard: ', $('#pmpublickey').val());
+  } catch (err) {
+    console.error('Failed to copy: ', err);
+  }
+}
+// PASTE PRIVATE MESSAGE PUB KEY
+async function pastePMPubKeySearch(){
+  if (!navigator.clipboard) {
+    console.log('NULL clipboard!');
+    return;
+  }
+  try {
+    const text = await navigator.clipboard.readText();
+    $('#pmpublickey').val(text);
+    typingPMPubKeySearch();
+    console.log('Pasted content: ', text);
+  } catch (err) {
+    console.error('Failed to read clipboard contents: ', err);
+  }
+}
+async function typingPMPubKeySearch(){
+  //console.log('typing...');
+  let user = gun.user($('#pmpublickey').val());
+  let name = await user.get('alias').then();
+  if(name){
+    //console.log('Found!');
+    $('#pmPubKeystatus').text(`Found Alias: ${name}`);
+  }else{
+    //console.log('Not Found!');
+    $('#pmPubKeystatus').text('Not Found!');
+  }
+}
+async function addContactPMPubKeySearch(){
+  let owner = gun.user();
+  let pmuser = gun.user($('#pmpublickey').val());
+  let name = await pmuser.get('alias').then();
+  let pub = await pmuser.get('pub').then();
+  if(name){
+    //console.log(pmuser);
+    //console.log(owner.is.pub);
+    //console.log(pub);
+    if(owner.is.pub == pub){
+      console.log('SAME ALIAS');
+    }else{
+      console.log('PROCESS');
+      owner.get('contact').get(pub).put({
+        alias:name,
+        pub:pub
+      },(ack)=>{
+        console.log("CONTACT ADD:", ack);
+      });
+    }
+  }
+}
+async function removeContactPMPubKeySearch(){
+  let owner = gun.user();
+  let pmuser = gun.user($('#pmpublickey').val());
+  let name = await pmuser.get('alias').then();
+  let pub = await pmuser.get('pub').then();
+  if(name){
+    //console.log(pmuser);
+    //console.log(owner.is.pub);
+    //console.log(pub);
+    if(owner.is.pub == pub){
+      console.log('SAME ALIAS');
+    }else{
+      console.log('PROCESS');
+      owner.get('contact').get(pub).put('null',(ack)=>{
+        console.log("CONTACT REMOVE:", ack);
+      });
+    }
+  }
+}
 // https://gun.eco/docs/API
 //ev.off() //remove listener
 // CHAT ROOM MESSAGES
-var chat = gun.get('chat');
-//var ev0 =null;
+var chat;
 // CHAT ROOM CONTENT
 class ChatRoom{
   constructor() {
     this.el =el("div",{id:'divChatRoom'},[
-      el('label','chat logs'),
+      el('label','Chat Room Messages'),
       el('div',{ id:'chatmessages',
         style:{
           height:'200px',
@@ -401,13 +555,26 @@ class ChatRoom{
     ]);
   }
 
+  intChat(){
+    let clocktime = chatTimeStamp(false);
+    //console.log(clocktime);
+    //needs to be reinit to call events
+    chat = gun.get('chat');
+    chat
+      // {'>': 'start', '<': 'end'}
+      //.get({'.':{'<':clocktime}, '%': 50000}).map()
+      .get({'.':{'>':clocktime}, '%': 50000}).map()
+      .once(chatMessageHandler);
+  }
+
   onmount() {
-    console.log("mounted ChatRoom");
-    initChat();
+    //console.log("mounted ChatRoom");
+    $('#chatmessages').empty();
+    this.intChat();
   }
 
   onunmount() {
-    console.log("unmounted ChatRoom");
+    //console.log("unmounted ChatRoom");
     //turn off chat
     //ev0.off() // nope
     chat.off(); // node.on(listenerhandler)
@@ -416,19 +583,19 @@ class ChatRoom{
   onremount() {
     console.log("ONREMOUNT ChatRoom !!!!!!!!");
     $('#chatmessages').empty();
-    initChat();
+    this.intChat();
   }
 }
 const divChatRoom = new ChatRoom();
 function chatTypingInput(event){
-  console.log('typing...')
+  //console.log('typing...')
   if(event.keyCode == 13){
     //console.log($('#chatinput').val());
     processChatInput($('#chatinput').val())
   }
 }
 function btnChatMessage(){
-  console.log('click...')
+  //console.log('click...')
   processChatInput($('#chatinput').val());
 }
 function processChatInput(msg){
@@ -448,20 +615,9 @@ function chatMessageHandler(data,key, _msg, _ev){
     ProcessChatMessage(data);
   }
 }
-function initChat(){
-  let clocktime = chatTimeStamp(false);
-  console.log(clocktime);
-  //needs to be reinit to call off event
-  chat = gun.get('chat');
-  chat
-    // {'>': 'start', '<': 'end'}
-    //.get({'.':{'<':clocktime}, '%': 50000}).map()
-    .get({'.':{'>':clocktime}, '%': 50000}).map()
-    .once(chatMessageHandler);
-}
 // https://stackoverflow.com/questions/10503606/scroll-to-bottom-of-div-on-page-load-jquery/10503695
 function ProcessChatMessage(data){
-  console.log('incoming...');
+  //console.log('incoming...');
   let msg = el('div',{id:data.date,textContent:`[${data.alias} ]: ${data.msg}`});
   $('#chatmessages').append(msg);
   $('#chatmessages').scrollTop($('#chatmessages')[0].scrollHeight);
@@ -507,7 +663,7 @@ function btnlogin(){
       console.log(ack.err);
       modalmessage('Fail Login');
     }else{
-      console.log('PASS');
+      //console.log('PASS');
       unmount(divAccessPanel, divNavMenuAccess);
       unmount(divAccessPanel, divAccessContent);
       mount(divAccessPanel, divAlias);
