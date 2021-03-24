@@ -36,6 +36,47 @@ function publicKeyCopy(){
     console.log("COPY PUBLIC KEY!");
   }
 }
+
+function timeStamp(){
+  return new Date().getTime();
+}
+
+function timeStampD(){
+  let time =new Date();
+  let month = time.getMonth() + 1;
+  let day = time.getDate();
+  let hour = time.getHours();
+  let min = time.getMinutes();
+  let sec = time.getSeconds();
+  month = (month < 10 ? "0" : "") + month;
+  day = (day < 10 ? "0" : "") + day;
+  hour = (hour < 10 ? "0" : "") + hour;
+  min = (min < 10 ? "0" : "") + min;
+  sec = (sec < 10 ? "0" : "") + sec;
+  //let ms = time.getUTCMilliseconds();
+  let ms = time.getMilliseconds();
+  var str = time.getFullYear() + "/" + month + "/" + day + ":" +  hour + ":" + min + ":" + sec + "." + ms;
+  return str;
+}
+
+function timeStampD2(){
+  let time =new Date();
+  let month = time.getMonth() + 1;
+  let day = time.getDate();
+  let hour = time.getHours();
+  let min = time.getMinutes();
+  let sec = time.getSeconds();
+  month = (month < 10 ? "0" : "") + month;
+  day = (day < 10 ? "0" : "") + day;
+  hour = (hour < 10 ? "0" : "") + hour;
+  min = (min < 10 ? "0" : "") + min;
+  sec = (sec < 10 ? "0" : "") + sec;
+  //let ms = time.getUTCMilliseconds();
+  let ms = time.getMilliseconds();
+  var str = time.getFullYear() + "/" + month + "/" + day;
+  return str;
+}
+
 //===============================================
 // DIV NAV MENU
 const divNavMenu = el("div",{id:'divNavMenu'},[
@@ -124,10 +165,95 @@ const divProfile = el("div",{id:'divProfile'},[
 const divMessages = el("div",{id:'divMessages'},[
   el('label','message logs')
 ]);
-// CHAT
-const divChatLogs = el("div",{id:'divChatLogs'},[
-  el('label','chat logs')
-]);
+// https://gun.eco/docs/API
+//var ev = null
+//var listenerHandler = (value, key, _msg, _ev) => {
+  //ev = _ev
+  //...
+//}
+//node.on(listenerHandler)
+//node.get('someValue').put(6) //trigger listener to set ev
+//ev.off() //remove listener
+
+
+// CHAT ROOM MESSAGES
+var chat = gun.get('chat');
+class ChatRoom{
+  constructor() {
+    this.el =el("div",{id:'divChatLogs'},[
+      el('label','chat logs'),
+      el('div',{ id:'chatmessages',
+        style:{
+          height:'200px',
+          width:'500px',
+          'border-style':'solid',
+          'overflow-y': 'scroll'
+        }
+      })
+      , el('input',{onkeyup:chatTypingInput,id:'chatinput'})
+      , el('button',{onkeyup:BtnchatMessage,textContent:'Enter'})
+    ]);
+  }
+  onmount() {
+    console.log("mounted ChatRoom");
+  }
+
+  onunmount() {
+    console.log("unmounted ChatRoom");
+    //turn off chat
+    chat.off();
+  }
+}
+const divChatLogs = new ChatRoom();
+
+function chatTypingInput(event){
+  console.log('typing...')
+  if(event.keyCode == 13){
+    //console.log($('#chatinput').val());
+    processChatInput($('#chatinput').val())
+  }
+}
+function BtnchatMessage(){
+  console.log('click...')
+  processChatInput($('#chatinput').val())
+}
+function processChatInput(msg){
+  let clocktime = timeStampD();
+  let user = gun.user();
+  console.log(user.is.alias);
+  
+  gun.get('chat')
+    .get(clocktime)
+    .put({
+      alias:user.is.alias,
+      msg:msg,
+      date:clocktime
+    });
+}
+
+function checkChatVisible(){
+
+}
+
+function initChat(){
+  let clocktime = timeStampD2();
+  chat
+    .get({'.':{'<':clocktime}, '%': 50000}).map()
+    .once((data,key)=>{
+      console.log(data);
+      ProcessChatMessage(data);
+    });
+}
+// https://stackoverflow.com/questions/10503606/scroll-to-bottom-of-div-on-page-load-jquery/10503695
+function ProcessChatMessage(data){
+  console.log('incoming...');
+  let msg = el('div',{id:data.date,textContent:`[${data.alias} ]: ${data.msg}`});
+  $('#chatmessages').append(msg);
+  $('#chatmessages').scrollTop($('#chatmessages')[0].scrollHeight);
+
+
+}
+
 // NAV MENU ACCESS BASIC
 const divNavMenuAccess=el('div',[
   , el('button',{onclick:showLogin,textContent:'Login'})
@@ -179,13 +305,9 @@ function btnlogin(){
       mount(divAccessPanel, divProfile);
       //console.log(ack);
       //console.log(user);
-      modalmessage('Login');
+      //modalmessage('Login');
       $('#username').text(user.is.alias);
       $('#aliaskeycopy').text("Alias:"+$('#alias').val()+" (Key Copy)");
-      //user.get('profile').get('alias').decryptonce(ack=>{//get user profile alias key for value
-          //console.log(ack);
-          //$('#inputalias').val(ack);
-      //});
       $('#aliaspublickey').val(ack.sea.pub);
       //updateContacts();
     }
@@ -208,7 +330,6 @@ function btnregister(){
     }
   });
 };
-
 // Change Passphrase Apply
 function btnChangePassphraseApply(){
   let user = gun.user();
@@ -249,7 +370,7 @@ async function btnPassphraseHintApply(){
     }
   });
 }
-
+// GET PASSPHRASE HINT
 async function btnGetPassphraseHint(){
   let alias = $('#falias').val();
   alias = await gun.get('~@'+alias).then();//reused variable
@@ -327,6 +448,6 @@ function btnMessage(){
 }
 function btnChatLogs(){
   hidediv();
-  //InitChat();
+  initChat();
   mount(divAccessPanel, divChatLogs);
 }
