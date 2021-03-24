@@ -357,6 +357,7 @@ async function btnSTextPaste(){
   }
 }
 // MESSAGE CONTENT
+var bInitPM= false;
 class PrivateMessage{
   constructor() {
     this.contact;
@@ -380,6 +381,7 @@ class PrivateMessage{
           'overflow-y': 'scroll'
         }
       }),
+      , el('button',{onclick:btnGetMessages,textContent:'Get Messages'})
       , el('input',{onkeyup:typingPrivateMessage,id:'privatemessageinput'})
       , el('button',{onclick:btnPrivateMessage,textContent:'Enter'})
     ]);
@@ -417,9 +419,12 @@ class PrivateMessage{
   }
   onmount(){
     this.updateContact();
+    $('#privatemessages').empty();
+    //initPrivateMessages();
   }
   onunmount(){
     $('#pmpublickey').val('');
+    bInitPM=false;
     try {
       this.contact.off();  
     } catch (error) {
@@ -427,18 +432,24 @@ class PrivateMessage{
     }
   }
 }
-
+//TODOLIST 
+function btnGetMessages(){
+  //console.log('CHECKING PM...');
+  $('#privatemessages').empty();
+  bInitPM=true;
+  initPrivateMessages();
+}
+// SELECT CONTACT PM
 function selectContactPM(){
-  console.log('test select');
-  console.log($('#pmcontacts').val());
+  //console.log($('#pmcontacts').val());
   $('#pmpublickey').val($('#pmcontacts').val());
   typingPMPubKeySearch();
 }
-
+// SET UP PRIVATE MESSAGE
 const divPrivateMessages = new PrivateMessage();
 // BUTTON PRIVATE MESSAGE
 function btnPrivateMessage(){
-  console.log('privatemessageinput');
+  //console.log('privatemessageinput');
   processPrivateMessage()
 }
 // TYPING PRIVATE MESSAGE
@@ -448,9 +459,94 @@ function typingPrivateMessage(event){
   }
 }
 //PROCESS PRIVATE MESSAGE
-function processPrivateMessage(){
+async function processPrivateMessage(){
   let msg = $('#privatemessageinput').val();
-  console.log(msg);
+  msg = (msg || '').trim();
+  //console.log('PM');
+  //console.log(msg);
+  if(!msg) return;//check if not message empty
+  let user = gun.user();
+  //console.log(user);
+  if(!user.is){ 
+    console.log('NOT USER!');
+    return 
+  }//check if user exist
+  let pub = $('#pmpublickey').val();
+  //console.log('pub:',pub);
+  pub = (pub || '').trim();
+  if(!pub){ 
+    console.log('EMPTY PUBLIC KEY!');
+    return;
+  }//check if not id empty
+  let to = gun.user(pub);//get alias
+  let who = await to.then() || {};//get alias data
+  //console.log(who);
+  if(!who.alias){
+    //console.log("No Alias!");
+    return;
+  }
+  if(user.is.pub == who.pub){
+    //console.log('SAME ALIAS FOR PM');
+    return;
+  }
+  let sec = await SEA.secret(who.epub, user._.sea); // Diffie-Hellman
+  let enc = await SEA.encrypt(msg, sec); //encrypt message
+  console.log(enc);
+  user.get('messages').get(pub).set(enc);
+  if(bInitPM==false){
+    initPrivateMessages();
+  }
+  bInitPM=true;
+}
+// INIT PRIVATE MESSAGES
+var PMUser;
+var PMTo;
+async function initPrivateMessages(){
+  let user = gun.user();
+  if(!user.is){ return }//check if user exist
+  let pub = ($('#pmpublickey').val() || '').trim();
+  if(!pub) return;//check if not id empty
+  let to = gun.user(pub);//get alias
+  let who = await to.then() || {};//get alias data
+  if(!who.alias){
+    console.log("No Alias!");
+    return;
+  }
+  UI.dec = await Gun.SEA.secret(who.epub, user._.sea); // Diffie-Hellman
+  //console.log("getting message");
+  // To deal test out listen turn off
+  if(PMUser){
+    PMUser.off();
+  }
+  if(PMTo){
+    PMTo.off();
+  }
+  PMUser = user.get('messages').get(pub);
+  PMUser.map().once(async(data,id)=>{
+    //console.log(data);
+    //console.log(id);
+    //PMUser.get(id).once((da,ke)=>{
+      //console.log(da);
+      //console.log(ke);
+    //});
+    UI(data,id,user.is.alias);
+  });
+  PMTo= to.get('messages').get(user._.sea.pub);
+  PMTo.map().once((data,id)=>{
+    UI(data,id,who.alias)
+  });
+  //user.get('messages').get(pub).map().once((data,id)=>{
+    //UI(data,id,user.is.alias)
+  //});
+  //to.get('messages').get(user._.sea.pub).map().once((data,id)=>{
+    //UI(data,id,who.alias)
+  //});
+}
+async function UI(say, id, alias){
+  say = await Gun.SEA.decrypt(say, UI.dec);
+  let msg = el('div',{id:id,textContent:`${alias} : ${say}`})
+  $('#privatemessages').append(msg);
+  $('#privatemessages').scrollTop($('#privatemessages')[0].scrollHeight);
 }
 // COPY PRIVATE MESSAGE PUB KEY
 async function copyPMPubKeySearch(){
@@ -554,7 +650,6 @@ class ChatRoom{
       , el('button',{onclick:btnChatMessage,textContent:'Enter'})
     ]);
   }
-
   intChat(){
     let clocktime = chatTimeStamp(false);
     //console.log(clocktime);
@@ -566,20 +661,19 @@ class ChatRoom{
       .get({'.':{'>':clocktime}, '%': 50000}).map()
       .once(chatMessageHandler);
   }
-
   onmount() {
     //console.log("mounted ChatRoom");
     $('#chatmessages').empty();
     this.intChat();
   }
-
   onunmount() {
     //console.log("unmounted ChatRoom");
     //turn off chat
     //ev0.off() // nope
-    chat.off(); // node.on(listenerhandler)
+    if(chat){
+      chat.off(); // node.on(listenerhandler)
+    }
   }
-
   onremount() {
     console.log("ONREMOUNT ChatRoom !!!!!!!!");
     $('#chatmessages').empty();
