@@ -491,11 +491,11 @@ function btnPMSort(){
   while (switching) {
     switching = false;
     b = list.getElementsByTagName('div');
-    console.log(b.length);
+    //console.log(b.length);
     for (i = 0; i < (b.length - 1); i++) {
       shouldSwitch = false;
       if (dir == "asc") {
-        console.log(b[i].id);
+        //console.log(b[i].id);
         //if (b[i].id > b[i + 1].id) {
         if (DateToTimeInt(b[i].id) > DateToTimeInt(b[i + 1].id)) {
           console.log('change true');
@@ -620,23 +620,34 @@ async function initPrivateMessages(){
   //console.log("getting message");
   // To deal test out listen turn off
   if(PMUser){
+    //console.log('FOUND',PMUser);
     PMUser.off();
+    PMUser=null;
   }
   if(PMTo){
     PMTo.off();
+    PMTo=null;
   }
   //.get({'.':{'>':clocktime}, '%': 50000}).map()
   //  .once(chatMessageHandler);
   let clocktime = chatTimeStamp(false); 
   //console.log('INIT SET UP PM');
-  PMUser = user.get('messages').get(pub).get({'.':{'>':clocktime},'%': 50000});
-  PMUser.map()
+  //PMUser = user.get('messages').get(pub).off();
+  //PMTo= to.get('messages').get(user._.sea.pub).off();
+  user.get('messages').off();//ok
+  to.get('messages').off();//ok
+  //user.get('messages').get(pub).off();//nope
+  //to.get('messages').get(user._.sea.pub).off();//nope
+
+
+  PMUser = user.get('messages').get(pub).get({'.':{'>':clocktime},'%': 50000})
+  .map()
   .once((data,id)=>{
     UI(data,id,user.is.alias);
   });
-
-  PMTo= to.get('messages').get(user._.sea.pub).get({'.':{'>':clocktime},'%': 50000});
-  PMTo.map()
+  
+  PMTo= to.get('messages').get(user._.sea.pub).get({'.':{'>':clocktime},'%': 50000})
+  .map()
   .once((data,id)=>{
     UI(data,id,who.alias);
   });
