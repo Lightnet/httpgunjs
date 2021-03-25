@@ -29,4 +29,25 @@ function timeStampD(){
   return str
 }
 
-console.log(timeStampD());
+//console.log(timeStampD());
+function DateToTimeInt(time){
+  //let time = timeStampD();
+  //console.log(time);
+  //console.log(time.split('/'))
+  //console.log(time.split(':'))
+  //console.log(time.split('.'))
+  let time0 =new Date();
+  time0.setFullYear(time.split('/')[0]);
+  time0.setMonth(time.split('/')[1]-1)
+  time0.setDate(time.substring(10,8))
+  //console.log(time.substring(10,8))
+  //time0.setHours(time.split(':')[1])
+  //console.log(time0.getHours());
+  time0.setMinutes(time.split(':')[2])
+  time0.setSeconds(time.substring(19,17))
+  time0.setMilliseconds(time.split('.')[1])
+  //time0.setTime(1)
+  //console.log(time0);
+  //console.log(time0.getTime());
+  return time0.getTime();
+}

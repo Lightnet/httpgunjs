@@ -5,6 +5,8 @@
 
 */
 // https://gun.eco/docs/SEA#quickstart
+//storage.clear();
+localStorage.clear();
 //import { el, mount } from "redom";
 //import { el, mount, unmount } from "https://redom.js.org/redom.es.min.js";
 const { el, mount, unmount} = redom;
@@ -52,6 +54,7 @@ async function publicKeyCopy(){
     console.error('Failed to copy: ', err);
   }
 }
+//CHAT TIME STAMP
 function chatTimeStamp(isRecord){
   if(isRecord==null){isRecord=true;}
   //console.log(isRecord);
@@ -79,6 +82,31 @@ function chatTimeStamp(isRecord){
     str = time.getFullYear() + "/" + month + "/" + day + ":" +  hour + ":" + min + ":" + sec + "." + ms;
   }
   return str;
+}
+function DateToTimeInt(time){
+  //let time = timeStampD();
+  //console.log(time);
+  //console.log(time.split('/'))
+  //console.log(time.split(':'))
+  //console.log(time.split('.'))
+  let time0 =new Date();
+  time0.setFullYear(time.split('/')[0]);
+  time0.setMonth(time.split('/')[1]-1)
+  time0.setDate(time.substring(10,8))
+  //console.log(time.substring(10,8))
+  //time0.setHours(time.split(':')[1])
+  //console.log(time0.getHours());
+  time0.setMinutes(time.split(':')[2])
+  time0.setSeconds(time.substring(19,17))
+  time0.setMilliseconds(time.split('.')[1])
+  //time0.setTime(1)
+  //console.log(time0);
+  //console.log(time0.getTime());
+  return time0.getTime();
+}
+
+function sleep(ms) {
+  return new Promise(resolve => setTimeout(resolve, ms));
 }
 //===============================================
 // DIV NAV MENU ONCE LOGIN
@@ -134,7 +162,7 @@ function aliasDelete(){
   });
   */
 }
-// DIV LOGIN
+// DIV LOGIN CONTENT
 const divLogin = el("div",{id:'divLogin'},[
 el('label','Alias: ')
 , el('br')
@@ -146,7 +174,7 @@ el('label','Alias: ')
 , el('br')
 , el('button',{onclick:btnlogin,id:'btnlogin',textContent:'Enter'})
 ]);
-// DIV REGISTER
+// DIV REGISTER CONTENT
 const divRegister = el("div",{id:'divRegister'},[
   el('label','Alias: ')
   , el('input',{id:'ralias',value:'useralias'})
@@ -159,7 +187,7 @@ const divRegister = el("div",{id:'divRegister'},[
   , el('br')
   , el('button',{onclick:btnregister, id:'btnbacklogin',textContent:'Sign Up'})
 ]);
-// DIV FORGOT
+// DIV FORGOT CONTENT
 const divForgot = el("div",{id:'divforgot'},[
   el('label','Alias: ')
   , el('input',{id:'falias',value:'useralias'})
@@ -175,7 +203,7 @@ const divForgot = el("div",{id:'divforgot'},[
   , el('br')
   , el('button',{onclick:btnGetPassphraseHint,textContent:'Get Hint'})
 ]);
-// CHANGE PASSPHRASE
+// CHANGE PASSPHRASE CONTENT
 const divChangePassphrase = el("div",{id:'divChangePassphrase'},[
   el('label','Old Passphrase: '),
   el('input',{id:'oldpassphrase',value:'',placeholder:'Old Passphrase'}),
@@ -185,7 +213,7 @@ const divChangePassphrase = el("div",{id:'divChangePassphrase'},[
   el('br'),
   el('button',{onclick:btnChangePassphraseApply, textContent:'Apply'})
 ]);
-// SET PASSPHRASE HINT
+// SET PASSPHRASE HINT CONTENT
 const divPassphraseHint = el("div",{id:'divPassphraseHint'},[
   el('label','Question 1: '),
   el('input',{id:'question1',value:'',placeholder:'Question #1'}),
@@ -198,14 +226,14 @@ const divPassphraseHint = el("div",{id:'divPassphraseHint'},[
   el('br'),
   el('button',{onclick:btnPassphraseHintApply, textContent:'Apply'})
 ]);
-// DISPLAY ALIAS
+// DISPLAY ALIAS CONTENT
 const divAlias=el('label',{textContent:'User:'},el('label',{id:'username',textContent:'guest'}));
-// PUBLIC KEY
+// PUBLIC KEY CONTENT
 const divPublicKey=el('label',{textContent:'Public Key:'},[
   el('input',{id:'aliaspublickey',readonly:true, size:'98'}),
   el('button',{ onclick:publicKeyCopy,id:'copypublickey',textContent:'Copy'})
 ]);
-// PROFILE
+// PROFILE CONTENT
 class AliasProfile{
   constructor() {
     this.el = el("div",{id:'divProfile'},[
@@ -282,7 +310,6 @@ class AliasProfile{
 }
 // PROFILE PAGE
 const divProfile = new AliasProfile()
-
 function typingProfileAlias(event){
   let user = gun.user();
   //user.get('profile').put();
@@ -360,10 +387,11 @@ async function btnSTextPaste(){
     console.error('Failed to read clipboard contents: ', err);
   }
 }
-// MESSAGE CONTENT
+//PRIVATE MESSAGE VAR
 var bInitPM= false;
 var PMUser;
 var PMTo;
+// PRIVATE MESSAGE CONTENT
 class PrivateMessage{
   constructor() {
     this.contact;
@@ -387,7 +415,8 @@ class PrivateMessage{
           'overflow-y': 'scroll'
         }
       }),
-      , el('button',{onclick:btnGetMessages,textContent:'Get Messages'})
+      , el('button',{onclick:btnGetPMessages,textContent:'Get Messages'})
+      , el('button',{onclick:btnPMSort,textContent:'Sort'})
       , el('input',{onkeyup:typingPrivateMessage,id:'privatemessageinput'})
       , el('button',{onclick:btnPrivateMessage,textContent:'Enter'})
     ]);
@@ -446,19 +475,72 @@ class PrivateMessage{
     }
   }
 }
+// DIV SORT PM MESSAGES
+function btnPMSort(){
+  // https://stackoverflow.com/questions/7742090/how-to-sort-divs-by-content-date
+  // https://jsfiddle.net/greguarr/2fr0vmhu/
+  console.log('SORT?');
+  //$('#privatemessages').sortContent({asc:true})
+  var list, i, switching, b, shouldSwitch, dir, switchcount = 0;
+  //list = document.getElementById("id01");
+  //list = $('#privatemessages');
+  list = document.getElementById('privatemessages');
+  switching = true;
+  //dir = "asc";
+  dir = "desc";
+  while (switching) {
+    switching = false;
+    b = list.getElementsByTagName('div');
+    console.log(b.length);
+    for (i = 0; i < (b.length - 1); i++) {
+      shouldSwitch = false;
+      if (dir == "asc") {
+        console.log(b[i].id);
+        //if (b[i].id > b[i + 1].id) {
+        if (DateToTimeInt(b[i].id) > DateToTimeInt(b[i + 1].id)) {
+          console.log('change true');
+          shouldSwitch = true;
+          break;
+        }
+      } else if (dir == "desc") {
+        if ( DateToTimeInt(b[i].id) < DateToTimeInt(b[i + 1].id)) {
+          shouldSwitch= true;
+          console.log('change true');
+          break;
+        }
+      }
+    }
+    if (shouldSwitch) {
+      b[i].parentNode.insertBefore(b[i + 1], b[i]);
+      switching = true;
+      switchcount ++;
+    } else {
+      if (switchcount == 0 && dir == "asc") {
+        dir = "desc";
+        switching = true;
+      }
+    }
+  }
+  console.log('END SORT');
+}
 //TODOLIST 
-function btnGetMessages(){
-  //console.log('CHECKING PM...');
+async function btnGetPMessages(){
+  console.log('CHECKING PM...');
   $('#privatemessages').empty();
   bInitPM=true;
+  /*
   if(PMUser){
     PMUser.off();
+    await sleep(200);
     PMUser=null;
   }
   if(PMTo){
     PMTo.off();
+    await sleep(200);
     PMTo=null;
   }
+  */
+  await sleep(200);
   initPrivateMessages();
 }
 // SELECT CONTACT PM
@@ -567,6 +649,7 @@ async function initPrivateMessages(){
   //});
   //console.log('END SET UP PM');
 }
+// ADD PM MESSAGE TO CONTENT
 async function UI(say, id, alias){
   say = await Gun.SEA.decrypt(say, UI.dec);
   let msg = el('div',{id:id,textContent:`${alias} : ${say}`})
@@ -898,11 +981,12 @@ const divModel = el("div",{id:'divModel',class:'modal'},[
 mount(document.body, divModel);
 //$("#divModel").show();
 //===============================================
-// DIALOG MESSAGE
+// DIALOG MESSAGE TEXT
 function modalmessage(_text){
   $("#dialogmessage").text(_text);
   $("#divModel").show();
 }
+// SIMPLE OKAY FUNCTION
 function btnDialogOkay(){
   console.log('close model?');
   $("#divModel").hide();
