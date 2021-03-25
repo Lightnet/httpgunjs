@@ -68,6 +68,10 @@ function chatTimeStamp(isRecord){
   sec = (sec < 10 ? "0" : "") + sec;
   //let ms = time.getUTCMilliseconds();
   let ms = time.getMilliseconds();
+  ms= ('00' + ms).slice(-3);
+  //ms = (ms < 10 ? "00" : "") + ms;
+  //ms = (ms < 100 ? "0" : "") + ms;
+
   let str;
   if(isRecord==false){
     str = time.getFullYear() + "/" + month + "/" + day + ":";
@@ -358,6 +362,8 @@ async function btnSTextPaste(){
 }
 // MESSAGE CONTENT
 var bInitPM= false;
+var PMUser;
+var PMTo;
 class PrivateMessage{
   constructor() {
     this.contact;
@@ -425,6 +431,14 @@ class PrivateMessage{
   onunmount(){
     $('#pmpublickey').val('');
     bInitPM=false;
+    if(PMUser){
+      PMUser.off();
+      PMUser=null;
+    }
+    if(PMTo){
+      PMTo.off();
+      PMTo=null;
+    }
     try {
       this.contact.off();  
     } catch (error) {
@@ -437,6 +451,14 @@ function btnGetMessages(){
   //console.log('CHECKING PM...');
   $('#privatemessages').empty();
   bInitPM=true;
+  if(PMUser){
+    PMUser.off();
+    PMUser=null;
+  }
+  if(PMTo){
+    PMTo.off();
+    PMTo=null;
+  }
   initPrivateMessages();
 }
 // SELECT CONTACT PM
@@ -491,16 +513,16 @@ async function processPrivateMessage(){
   }
   let sec = await SEA.secret(who.epub, user._.sea); // Diffie-Hellman
   let enc = await SEA.encrypt(msg, sec); //encrypt message
-  console.log(enc);
-  user.get('messages').get(pub).set(enc);
+  //console.log(enc);
+  let clock = chatTimeStamp()
+  //user.get('messages').get(pub).set(enc);
+  user.get('messages').get(pub).get(clock).put(enc);
   if(bInitPM==false){
     initPrivateMessages();
   }
   bInitPM=true;
 }
 // INIT PRIVATE MESSAGES
-var PMUser;
-var PMTo;
 async function initPrivateMessages(){
   let user = gun.user();
   if(!user.is){ return }//check if user exist
@@ -521,26 +543,29 @@ async function initPrivateMessages(){
   if(PMTo){
     PMTo.off();
   }
-  PMUser = user.get('messages').get(pub);
-  PMUser.map().once(async(data,id)=>{
-    //console.log(data);
-    //console.log(id);
-    //PMUser.get(id).once((da,ke)=>{
-      //console.log(da);
-      //console.log(ke);
-    //});
+  //.get({'.':{'>':clocktime}, '%': 50000}).map()
+  //  .once(chatMessageHandler);
+  let clocktime = chatTimeStamp(false); 
+  //console.log('INIT SET UP PM');
+  PMUser = user.get('messages').get(pub).get({'.':{'>':clocktime},'%': 50000});
+  PMUser.map()
+  .once((data,id)=>{
     UI(data,id,user.is.alias);
   });
-  PMTo= to.get('messages').get(user._.sea.pub);
-  PMTo.map().once((data,id)=>{
-    UI(data,id,who.alias)
+
+  PMTo= to.get('messages').get(user._.sea.pub).get({'.':{'>':clocktime},'%': 50000});
+  PMTo.map()
+  .once((data,id)=>{
+    UI(data,id,who.alias);
   });
+
   //user.get('messages').get(pub).map().once((data,id)=>{
     //UI(data,id,user.is.alias)
   //});
   //to.get('messages').get(user._.sea.pub).map().once((data,id)=>{
     //UI(data,id,who.alias)
   //});
+  //console.log('END SET UP PM');
 }
 async function UI(say, id, alias){
   say = await Gun.SEA.decrypt(say, UI.dec);
